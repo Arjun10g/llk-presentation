@@ -1,0 +1,625 @@
+/* ==========================
+   Global Styles
+========================== */
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #f8fafc;
+  color: #1e293b;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+.app-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* ==========================
+   Sidebar
+========================== */
+.sidebar {
+  width: 240px;
+  background: #1e293b;
+  color: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-top {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 1.5rem 1rem 0;
+}
+
+.sidebar h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 1.8rem;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar nav li {
+  padding: 0.9rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.25s ease;
+}
+
+.sidebar nav li:hover {
+  background: #334155;
+  transform: translateX(3px);
+}
+
+.sidebar nav li.active {
+  background: #2563eb;
+  color: white;
+  transform: translateX(3px);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+}
+
+.sidebar footer {
+  font-size: 0.8rem;
+  text-align: center;
+  opacity: 0.75;
+  padding: 1rem 0;
+}
+
+/* ==========================
+   Main content
+========================== */
+.content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  background: #f8fafc;
+  transition: all 0.4s ease;
+}
+
+/* ==========================
+   Section Animations
+========================== */
+.section {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  display: none;
+}
+.section.active {
+  opacity: 1;
+  transform: translateY(0);
+  display: block;
+}
+
+/* ==========================
+   Section Text
+========================== */
+.section h1 {
+  font-size: 1.6rem;
+  color: #1e293b;
+  margin-bottom: 0.4rem;
+}
+.section-desc {
+  font-size: 0.95rem;
+  color: #475569;
+  margin-bottom: 1.5rem;
+}
+
+/* ==========================
+   Controls
+========================== */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.controls label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.controls input {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+}
+button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+button:hover {
+  background: #1e40af;
+  transform: translateY(-1px);
+}
+button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* ==========================
+   Plot Layout
+========================== */
+#plot3D, #plot2D {
+  width: 100%;
+  height: 550px;
+  margin-top: 2rem;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.profiles {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+#tauProfile, #sigmaProfile {
+  flex: 1;
+  height: 400px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+
+/* Progress bar and status text */
+#progressBar {
+  width: 0%;
+  height: 8px;
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  margin-top: 0.8rem;
+  opacity: 0;
+}
+#progressBar.visible {
+  opacity: 1;
+}
+#progressText {
+  font-size: 0.9rem;
+  color: #334155;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.matrix-plot {
+  height: 320px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+#r2plot {
+  width: 100%;
+  height: 350px;
+  margin-top: 1.5rem;
+}
+#matrixInfo {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+select {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+  background: #fff;
+}
+
+/* === PARAMETER DIAGNOSTICS SECTION === */
+.diag-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.diag-controls .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.6rem 1rem;
+}
+
+.diag-controls label {
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+  color: #333;
+}
+
+.diag-controls input[type="number"],
+.diag-controls input[type="checkbox"] {
+  margin-top: 4px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.diag-controls input[type="checkbox"] {
+  transform: scale(1.2);
+  margin-left: 5px;
+}
+
+.btn-primary {
+  align-self: flex-start;
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 600;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.btn-primary:hover { background-color: #2563eb; }
+
+.card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.card.small { padding: 0.8rem 1rem; font-size: 0.9rem; }
+.card.scrollable { max-height: 320px; overflow-y: auto; }
+
+.card h3 { margin-top: 0; color: #1e293b; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+
+.plot {
+  background: #fafafa;
+  border-radius: 10px;
+  margin-top: 1rem;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.compact td {
+  padding: 2px 6px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.latex {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #111;
+}
+
+/* ==== Refined Intro Section ==== */
+.intro {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 2rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #1a1a1a;
+}
+
+.intro h1, .intro h2, .intro h3 {
+  margin: 1.4em 0 0.5em;
+  font-weight: 600;
+  color: #111;
+}
+
+.intro p {
+  margin: 0.4em 0 1em;
+}
+
+.examples {
+  margin: 0.4em 0 1.2em 1.2em;
+  padding: 0;
+  font-size: 1rem;
+}
+.examples li { margin-bottom: 0.3em; }
+
+.fxrand {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+  margin: 0.8em 0 1.2em;
+}
+.fxrand th, .fxrand td {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+}
+.fxrand th {
+  background: #f9f9f9;
+  font-weight: 600;
+  text-align: left;
+}
+
+.eq {
+  text-align: center;
+  margin: 1.3em 0;
+  font-size: 1.1rem;
+}
+
+.defblock {
+  background: #fafafa;
+  border-left: 3px solid #ccc;
+  padding: 0.6em 1em;
+  margin: 0.6em 0 1em;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.defblock p {
+  margin: 0.2em 0;
+}
+
+
+#mlmviz-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f8fafc;
+  color: #1e293b;
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+#mlmviz-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1rem 1.5rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+#mlmviz-controls h2 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #0f172a;
+}
+
+#mlmviz-slider-wrap,
+#mlmviz-angle-wrap {
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+#mlmviz-slider-label,
+#mlmviz-angle-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+#mlmviz-boundary-label {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+#mlmviz-reset {
+  margin-top: 1rem;
+  background: #3b82f6;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#mlmviz-reset:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+}
+
+#mlmviz-canvas {
+  width: 90%;
+  height: auto;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+}
+
+#mlmviz-footer {
+  text-align: center;
+  margin-top: 1rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: #1e293b;
+  color: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.sidebar h2 {
+  text-align: center;
+  margin-top: 1.2rem;
+}
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+}
+.sidebar nav li {
+  padding: 0.8rem 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.sidebar nav li:hover,
+.sidebar nav li.active {
+  background: #334155;
+}
+
+/* Content Area */
+.content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+.section {
+  display: none;
+}
+.section.active {
+  display: block;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.controls label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+.controls input,
+.controls select {
+  margin-top: 0.25rem;
+  padding: 0.3rem;
+}
+button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+button:hover {
+  background: #1d4ed8;
+}
+
+/* Progress */
+#progressBar {
+  height: 10px;
+  background: #3b82f6;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+#progressBar.visible {
+  width: 100%;
+}
+#progressText {
+  font-size: 0.9rem;
+  margin-top: 0.4rem;
+  color: #475569;
+}
+
+/* Plot containers */
+#plot3D, #plot2D, #tauProfile, #sigmaProfile,
+#plotG, #plotR, #plotV, #plotVinv, #r2plot {
+  margin: 1.5rem 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.95rem;
+  background-color: #f9fafb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+thead {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+th, td {
+  padding: 0.9rem 1.2rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #f1f5f9;
+}
+
+tbody tr:hover {
+  background-color: #e2e8f0;
+  transition: background-color 0.2s ease-in-out;
+}
+
+th {
+  font-weight: 600;
+  border-bottom: 2px solid #334155;
+}
+
+td {
+  border-bottom: 1px solid #e2e8f0;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+table caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #334155;
+  margin-bottom: 0.75rem;
+}
+

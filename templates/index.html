@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Random-Intercept MLM Log-Likelihood Surface</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script>
+    MathJax.Hub.Config({
+        extensions: ["tex2jax.js"],
+        jax: ["input/TeX", "output/HTML-CSS"],
+        tex2jax: {
+            inlineMath: [['\\(', '\\)']],
+            displayMath: [['\\[', '\\]']],
+            processEscapes: true
+        },
+        "HTML-CSS": { scale: 90 },
+    });
+</script>
+<!-- d3 js -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+
+        <!-- ========== SIDEBAR ========== -->
+        <aside class="sidebar">
+          <div class="sidebar-top">
+            <h2>Small Sample Inferences in MLM</h2>
+            <nav>
+              <ul>
+                <li data-section="intro" class = 'active'>Introduction</li>
+                <li data-section="covariance">Covariance Structures</li>
+                <li data-section="estimation">Model Estimation</li>
+                <li data-section="small-sample">Small-Sample Inferences</li>
+                <li data-section="llk">LLK Plotting</li>
+                <li data-section="compare">Matrix undressing</li>
+                <li data-section="diagnostics">Parameter Diagnostics</li>
+              </ul>
+            </nav>
+          </div>
+          <footer>© 2025 Arjun Ghumman</footer>
+        </aside>
+    
+        <!-- ========== MAIN CONTENT ========== -->
+        <main class="content">
+            <!-- HOME SECTION -->
+            <section id="intro" class="section active">
+                <div class="intro">
+              
+                  <h1>Nested or Clustered Data</h1>
+                  <p>
+                    In many datasets, observations are grouped and not independent.
+                    Typical examples include:
+                  </p>
+                  <ul class="examples">
+                    <li>Students within schools</li>
+                    <li>Repeated measures within individuals</li>
+                    <li>Patients within clinics</li>
+                  </ul>
+              
+                  <h2>Fixed vs Random Effects</h2>
+                  <table class="fxrand">
+                    <thead>
+                      <tr><th>Aspect</th><th>Fixed</th><th>Random</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>Meaning</td><td>Applies to all groups</td><td>Varies across groups</td></tr>
+                      <tr><td>Goal</td><td>Estimate population effect</td><td>Model group differences</td></tr>
+                      <tr><td>Example</td><td>Average time effect</td><td>Each student’s intercept & slope</td></tr>
+                      <tr><td>Math</td><td>\(\beta\)</td><td>\(b \sim N(0,G)\)</td></tr>
+                    </tbody>
+                  </table>
+              
+                  <h2>The General Mixed Model</h2>
+              
+                  <p class="eq">\[ y = X\beta + Zb + \varepsilon \]</p>
+              
+                  <div class="defblock">
+                    <p>\(y\): outcomes</p>
+                    <p>\(X\): design matrix for fixed effects</p>
+                    <p>\(Z\): design matrix for random effects</p>
+                    <p>\(\beta\): fixed effects</p>
+                    <p>\(b\): random effects</p>
+                    <p>\(\varepsilon\): residuals</p>
+                  </div>
+
+                  <p class="eq">\( b \sim N(0,G), \quad \varepsilon \sim N(0,R), \quad \text{Cov}(b,\varepsilon)=0 \)</p>
+
+                  <div class="fxre-wrap">
+                    <h2>Fixed vs Random Effects</h2>
+                    <button id="toggle">Show Random Effects</button>
+                    <svg id="chart" width="720" height="420"></svg>
+                  </div>
+                  
+                </div>
+              </section>
+              <!-- Covariance -->
+              <section id="covariance" class="section">
+                <div class="intro">
+                    <h2>Marginal Covariance Structure for Y</h2>
+                    <p>
+                        \( 
+                        \begin{bmatrix}\mathbf{b}\\\boldsymbol{\varepsilon}\end{bmatrix}
+                        \sim \mathcal{N}\!\left(
+                        \underbrace{\begin{bmatrix}\mathbf{0}\\\mathbf{0}\end{bmatrix}}_{\text{joint mean}},
+                        \underbrace{\begin{bmatrix}\mathbf{G}&\mathbf{0}\\\mathbf{0}&\mathbf{R}\end{bmatrix}}_{\text{joint covariance}}
+                        \right)
+                        \)
+                        </p>
+
+                        <h3>Expected Value for Y</h3>
+                      
+                        <p>
+                        \( E[\mathbf{y}] = E[\mathbf{X}\boldsymbol{\beta} + \mathbf{Z}\mathbf{b} + \boldsymbol{\varepsilon}]
+                        = \mathbf{X}\boldsymbol{\beta} + \mathbf{Z}E[\mathbf{b}] + E[\boldsymbol{\varepsilon}]
+                        = \mathbf{X}\boldsymbol{\beta} + \mathbf{Z}\mathbf{0} + \mathbf{0} = \mathbf{X}\boldsymbol{\beta} \)
+                        </p>
+                      
+                        <p>Since – \( b \sim N(0,G) \), \( E(B)=0 \)</p>
+                        <p>\( \varepsilon \sim N(0,R) \), \( E(\varepsilon)=0 \)</p>
+                      
+                        <h3>Variance for a Sum</h3>
+                        <p>
+                        \( \operatorname{Var}(\mathbf{a}+\mathbf{c})
+                        = \operatorname{Var}(\mathbf{a}) + \operatorname{Var}(\mathbf{c})
+                        + \operatorname{Cov}(\mathbf{a},\mathbf{c}) + \operatorname{Cov}(\mathbf{c},\mathbf{a}) \)
+                        </p>
+                      
+                        <p>
+                            \( 
+                            \underbrace{\operatorname{Var}(\mathbf{y})}_{\text{total variance}} 
+                            = \underbrace{\operatorname{Var}(\mathbf{X}\boldsymbol{\beta})}_{\text{fixed effects}} 
+                            + \underbrace{\operatorname{Var}(\mathbf{Z}\mathbf{b})}_{\text{random effects}} 
+                            + \underbrace{\operatorname{Var}(\boldsymbol{\varepsilon})}_{\text{residual variance}} 
+                            \)
+                            </p>
+
+                            
+                        <p>
+                        \( \operatorname{Var}(\mathbf{y})
+                        = \operatorname{Var}(\mathbf{Z}\mathbf{b} + \boldsymbol{\varepsilon})
+                        = \operatorname{Var}(\mathbf{Z}\mathbf{b}) + \operatorname{Var}(\boldsymbol{\varepsilon})
+                        + \operatorname{Cov}(\mathbf{Z}\mathbf{b},\boldsymbol{\varepsilon})
+                        + \operatorname{Cov}(\boldsymbol{\varepsilon},\mathbf{Z}\mathbf{b}) \)
+                        </p>
+                      
+                        <h3>Because of the Independence Assumption</h3>
+                        <p>\( \operatorname{Cov}(\mathbf{b},\boldsymbol{\varepsilon}) = \mathbf{0} \)</p>
+                        <p>\( \operatorname{Cov}(\mathbf{Z}\mathbf{b},\boldsymbol{\varepsilon})
+                        = \mathbf{Z}\operatorname{Cov}(\mathbf{b},\boldsymbol{\varepsilon})
+                        = \mathbf{Z}\mathbf{0} = \mathbf{0} \)</p>
+                      
+                        <p>\( \operatorname{Var}(\mathbf{y}) = \operatorname{Var}(\mathbf{Z}\mathbf{b}) + \operatorname{Var}(\boldsymbol{\varepsilon}) \)</p>
+                        <p>\( \operatorname{Var}(\mathbf{b}) = \mathbf{G}, \quad \operatorname{Var}(\boldsymbol{\varepsilon}) = \mathbf{R} \)</p>
+                      
+                        <h3>Using Linearity of Variance</h3>
+                        <p>
+                            \(
+                            \text{Therefore, } 
+                            \operatorname{Var}(\mathbf{y}) 
+                            = \operatorname{Var}(\mathbf{Z}\mathbf{b} + \boldsymbol{\varepsilon}) 
+                            = \mathbf{Z}\,\operatorname{Var}(\mathbf{b})\,\mathbf{Z}^\top + \operatorname{Var}(\boldsymbol{\varepsilon}) 
+                            = \mathbf{Z}\mathbf{G}\mathbf{Z}^\top + \mathbf{R}.
+                            \)
+                            </p>
+                            
+                            
+                        <p>\( \operatorname{Var}(\mathbf{y}) = \mathbf{Z}\mathbf{G}\mathbf{Z}^\top + \mathbf{R} \)</p>
+                        <hr>
+                            <h3>Variance of Random Effects (Assumption)</h3>
+                            <p>\( \operatorname{Var}(\mathbf{b}) = \mathbf{G} \)</p>
+                          
+                            <p>If each group has a <b>random intercept only</b>:</p>
+                            <p>\( \mathbf{G} = \begin{bmatrix} \tau^2 \end{bmatrix} \), 
+                            where \( \tau^2 \) is the between-group variance in intercepts.</p>
+                          
+                            <p>If groups also have a <b>random slope</b>:</p>
+                            <p>\( 
+                            \mathbf{G}_0 =
+                            \begin{bmatrix}
+                            \tau_{00} & \tau_{01} \\
+                            \tau_{01} & \tau_{11}
+                            \end{bmatrix}
+                            \)</p>
+                          
+                            <ul>
+                              <li>\( \tau_{00} \): variance of intercepts</li>
+                              <li>\( \tau_{11} \): variance of slopes</li>
+                              <li>\( \tau_{01} \): covariance between intercept and slope</li>
+                            </ul>
+                          
+                            <p>The full random-effects covariance for \( J \) groups is block-diagonal:</p>
+                            <p>\( \mathbf{G} = \operatorname{blockdiag}(\mathbf{G}_0, \mathbf{G}_0, \dots, \mathbf{G}_0) \)</p>
+                          
+                            <p>Thus, \( \mathbf{G} \) encodes how groups differ (intercept and slope variability) and how those differences co-vary.</p>
+                            <hr>
+                        <h3>Variance of Residuals (Assumption)</h3>
+                        <p>\( \operatorname{Var}(\boldsymbol{\varepsilon}) = \mathbf{R} \)</p>
+                        <p>\( \mathbf{R} = \sigma^{2}\mathbf{I}_{n} \)</p>
+                      
+                        <p>
+                        If the residuals are independent (no correlation between observations)
+                        and homoscedastic (constant variance), then \( \mathbf{R} \) is diagonal.
+                        </p>
+                      
+                        <p>
+                        Therefore, the variance of \( \mathbf{y} \) is a marginal covariance matrix
+                        that combines two sources of variation:
+                        \( \mathbf{G} \) (between-group variance) and \( \mathbf{R} \)
+                        (within-group variance).
+                        </p>
+                  
+                      <p class="eq">\[ \operatorname{Var}(y) = ZGZ^\top + R \]</p>
+                  
+                      <div class="defblock">
+                        <p>If residuals are independent, \( R = \sigma^2 I_n \).</p>
+                        <p>Total variance combines between-group \( G \) and within-group \( R \).</p>
+                      </div>
+                      <hr>
+                      <h3>Block Structure</h3>
+                  
+                      <p class="eq">
+                        \[
+                        G =
+                        \begin{bmatrix}
+                        G_0 & 0 & \cdots \\
+                        0 & G_0 & \cdots \\
+                        \vdots & & \ddots
+                        \end{bmatrix},
+                        \quad
+                        R =
+                        \begin{bmatrix}
+                        R_1 & 0 & \cdots \\
+                        0 & R_2 & \cdots \\
+                        \vdots & & \ddots
+                        \end{bmatrix}
+                        \]
+                      </p>
+                  
+                      <p>For autocorrelated residuals:</p>
+                  
+                      <p class="eq">
+                        \[
+                        R_j = \sigma^2
+                        \begin{bmatrix}
+                        1 & \rho & \rho^2 & \cdots \\
+                        \rho & 1 & \rho & \cdots \\
+                        \rho^2 & \rho & 1 & \cdots
+                        \end{bmatrix}
+                        \]
+                      </p>
+                  
+                      <p>Residuals close in time or order are more correlated; \(\rho\) controls how fast correlation decays.</p>
+                  
+                      <hr>
+                  <h2>Marginal Covariance \( \mathbf{V} \)</h2>
+              
+                  <p class="eq">
+                    \[
+                    \mathbf{V}_j =
+                    \underbrace{\mathbf{Z}_j \mathbf{G}_0 \mathbf{Z}_j^\top}_{\text{Between-group covariance}}
+                    + \underbrace{\mathbf{R}_j}_{\text{Within-group covariance}}
+                    \]
+                  </p>
+              
+                  <p>This is the covariance matrix of the observed responses for group \(j\).  
+                     It shows how much each observation varies and how correlated they are within a group.</p>
+
+                     <h3>Summarizing Information from Covariance Matrices</h3>
+
+                     <p>
+                     To extract scalar summaries from covariance matrices, two common operations are used:
+                     </p>
+                     
+                     <p>
+                     \( 
+                     \text{Trace: } 
+                     \operatorname{tr}(\mathbf{V}_j) 
+                     = \sum_i V_{j,ii} 
+                     \)
+                     </p>
+                     
+                     <p>
+                     \( 
+                     \text{Mean of diagonal: } 
+                     \operatorname{mean}\!\left[\operatorname{diag}(\mathbf{V}_j)\right] 
+                     = \frac{1}{n_j}\operatorname{tr}(\mathbf{V}_j)
+                     \)
+                     </p>
+                     
+                     <p>
+                     These scalar summaries are useful when comparing models, computing total variability across groups.
+                     </p>
+                     <hr>
+                     <h3>Why This Becomes Complex in Random Slope Models</h3>
+                     
+                     <p>
+                     In models with both random intercepts and slopes,
+                     \(
+                     \mathbf{G}_0
+                     =
+                     \begin{bmatrix}
+                     \tau_{00} & \tau_{01}\\[4pt]
+                     \tau_{01} & \tau_{11}
+                     \end{bmatrix},
+                     \)
+                     the covariance structure introduces cross-terms:
+                     </p>
+                     
+                     <p>
+                     \(
+                     \mathbf{Z}_j \mathbf{G}_0 \mathbf{Z}_j^\top
+                     =
+                     \tau_{00}\mathbf{1}\mathbf{1}^\top
+                     + \tau_{01}(\mathbf{1}\mathbf{x}_j^\top + \mathbf{x}_j\mathbf{1}^\top)
+                     + \tau_{11}\mathbf{x}_j\mathbf{x}_j^\top.
+                     \)
+                     </p>
+                     
+                     <p>
+                     Here, the off-diagonal covariance \( \tau_{01} \) links intercept and slope variability.
+                     When \( \tau_{01} \neq 0 \), the marginal covariance \( \mathbf{V}_j \) is no longer constant across timepoints or covariate levels.
+                     The trace (or mean diagonal) then depends on the distribution of \( \mathbf{x}_j \). 
+                     </p>
+    
+                     <hr>
+                  <h3>Example — Random Intercept Model</h3>
+              
+                  <p class="eq">\[ \mathbf{G} = 1378\,\mathbf{I}_{18} \]</p>
+                  <p>Each subject has a random intercept with variance 1378; subjects are independent.</p>
+              
+                  <p class="eq">\[ \mathbf{R} = 960\,\mathbf{I}_{180} \]</p>
+                  <p>Residuals are independent with variance 960 per observation.</p>
+              
+                  <p class="eq">\[ \mathbf{V} = \mathbf{Z}\mathbf{G}\mathbf{Z}^\top + \mathbf{R} = 
+                  \operatorname{blockdiag}_{j=1}^{18}\!\left(1378\,\mathbf{J}_{10} + 960\,\mathbf{I}_{10}\right) \]</p>
+              
+                  <p class="eq">
+                    \[
+                    \rho = \frac{\sigma_b^2}{\sigma_b^2 + \sigma^2} =
+                    \frac{1378}{1378 + 960} \approx 0.59
+                    \]
+                  </p>
+              
+                  <div class="defblock">
+                    <p>Diagonal → total variance (between + within)</p>
+                    <p>Off-diagonal → correlation within subjects</p>
+                    <p>Across blocks → independence between subjects</p>
+                  </div>
+                  <hr>
+                  <h3>Random Slope Model</h3>
+              
+                  <p class="eq">
+                    \[
+                    \mathbf{G}_0 =
+                    \begin{bmatrix}
+                    612.1 & 9.6 \\
+                    9.6 & 35.1
+                    \end{bmatrix}
+                    \]
+                  </p>
+              
+                  <div class="defblock">
+                    <p>612.1 → variance of random intercepts</p>
+                    <p>35.1 → variance of random slopes</p>
+                    <p>9.6 → covariance between intercepts and slopes</p>
+                  </div>
+              
+                  <p class="eq">\[ \mathbf{R} = 655\,\mathbf{I}_{180} \]</p>
+                  <p class="eq">\[ \mathbf{V}_j = \mathbf{Z}_j \mathbf{G}_0 \mathbf{Z}_j^\top + 655\,\mathbf{I}_{10} \]</p>
+              
+                  <p>Diagonal entries increase with \(x\) due to slope variability.  
+                     Off-diagonals reflect shared slope effects between timepoints.</p>
+                     <hr>
+                  <h2>Intraclass Correlation (ICC)</h2>
+              
+                  <p class="eq">
+                    \[
+                    \mathrm{ICC}_i =
+                    \frac{\mathbf{e}_i^\top \mathbf{Z}\mathbf{G}\mathbf{Z}^\top \mathbf{e}_i}
+                    {\mathbf{e}_i^\top (\mathbf{Z}\mathbf{G}\mathbf{Z}^\top + \mathbf{R}) \mathbf{e}_i}
+                    \]
+                  </p>
+              
+                  <div class="defblock">
+                    <p>Measures within-group similarity.</p>
+                    <p>\(\text{ICC} \approx 0\) → weak clustering, near independence.</p>
+                    <p>\(\text{ICC} \approx 1\) → strong grouping, nearly identical within cluster.</p>
+                  </div>
+                  <hr>
+                  <h2>Random Intercept–Slope Covariance Explorer</h2>
+                  <p>Adjust parameters to see how the marginal covariance <i>V = ZGZ′ + R</i> changes with the covariate <i>x</i>.</p>
+                
+                  <div class="controls" style="display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+                    <label>n <input id="n_points" type="number" value="50" min="5" max="200"></label>
+                    <label>τ₀₀ <input id="tau00" type="number" value="1.0" step="0.1"></label>
+                    <label>τ₁₁ <input id="tau11" type="number" value="0.5" step="0.1"></label>
+                    <label>τ₀₁ <input id="tau01" type="number" value="0.3" step="0.1"></label>
+                    <label>σ² <input id="sigma2" type="number" value="0.2" step="0.05"></label>
+                    <button onclick="fetchRandomSlopeFull()">Simulate</button>
+                  </div>
+                
+                  <h3>Diagonal of V (Variance vs x)</h3>
+                  <canvas id="varCanvas" height="220"></canvas>
+              
+                  <h2>Explained Variance and \(R^2\)</h2>
+                  
+                  <h3>Explained Variance and the Problem of \(R^2\) in Multilevel Models</h3>
+
+                    <p>
+                    In ordinary least squares (OLS) regression, model fit is summarized by the familiar coefficient of determination:
+                    </p>
+
+                    <p>
+                    \(
+                    R^2 = 1 - \frac{\operatorname{Var}(\text{residuals})}{\operatorname{Var}(y)} 
+                        = \frac{\operatorname{Var}(\hat{y})}{\operatorname{Var}(y)}.
+                    \)
+                    </p>
+
+                    <h3>Why This Fails in Multilevel Models</h3>
+
+                    <p>
+                    In multilevel models (MLMs), the data have <em>multiple levels of variability</em>:
+                    </p>
+
+                    <p>
+                    \(
+                    \operatorname{Var}(\mathbf{y}) = 
+                    \underbrace{\operatorname{Var}(\mathbf{X}\boldsymbol{\beta})}_{\text{fixed effects}} +
+                    \underbrace{\operatorname{Var}(\mathbf{Z}\mathbf{b})}_{\text{between-group (random effects)}} 
+                    + 
+                    \underbrace{\operatorname{Var}(\boldsymbol{\varepsilon})}_{\text{within-group (residuals)}}.
+                    \)
+                    </p>
+
+                    <ul>
+                    <li>There is no single “error variance” — residuals are structured within clusters (captured by \(\mathbf{R}\)).</li>
+                    <li>The between-group variability (\(\mathbf{G}\)) depends on model specification, such as random intercepts or slopes.</li>
+                    </ul>
+
+                    <p>
+                    Thus, a single global \(R^2\) cannot describe how much variation is explained across all levels. 
+                    </p>
+                    <hr>
+                    <h3>Modern Multilevel \(R^2\) Definitions</h3>
+
+                    <p><strong>1️⃣ Nakagawa & Schielzeth (2013): Marginal and Conditional \(R^2\)</strong></p>
+                    <p>
+                    Nakagawa and Schielzeth decomposed the total variance into fixed, random, and residual components:
+                    \(
+                    \operatorname{Var}_{\text{total}} = \operatorname{Var}_{\text{fixed}} + \operatorname{Var}_{\text{random}} + \operatorname{Var}_{\text{resid}}.
+                    \)
+                    They define:
+                    </p>
+
+                    <p>
+                    \(
+                    R_m^2 = \frac{\operatorname{Var}_{\text{fixed}}}{\operatorname{Var}_{\text{total}}}, \qquad
+                    R_c^2 = \frac{\operatorname{Var}_{\text{fixed}} + \operatorname{Var}_{\text{random}}}{\operatorname{Var}_{\text{total}}},
+                    \)
+                    </p>
+
+                    <p>
+                    representing variance explained by fixed effects only (\(R_m^2\)) or by both fixed and random effects (\(R_c^2\)).
+                    These have become widely used but rely on scalar summaries (e.g., mean of diagonal) of the covariance matrices.
+                    </p>
+
+                    <p><strong>2️⃣ Rights & Sterba (2019): Level-Specific and Trace-Based \(R^2\)</strong></p>
+                    <p>
+                    Rights and Sterba proposed a more general matrix-based framework using the trace operator to quantify explained variance
+                    at both the <em>within-cluster</em> and <em>between-cluster</em> levels:
+                    </p>
+
+                    <p>
+                    \(
+                    R_{\text{within}}^2 = 1 - \frac{\operatorname{tr}(\mathbf{R})}{\operatorname{tr}(\mathbf{R}^{(0)})}, \qquad
+                    R_{\text{between}}^2 = 1 - \frac{\operatorname{tr}(\mathbf{G})}{\operatorname{tr}(\mathbf{G}^{(0)})}.
+                    \)
+                    </p>
+
+                    <p>
+                    Their framework allows the decomposition of total variance into meaningful hierarchical components,
+                    capturing variance reduction separately for random intercepts, slopes, and residuals.
+                    </p>
+
+                    <p class="eq">
+                    \[
+                    R^2 = 1 -
+                    \frac{\operatorname{Var}(\text{error from full model})}
+                    {\operatorname{Var}(\text{error from null model})}
+                    \]
+                  </p>
+              
+                  <p><strong>Within-level \(R^2\):</strong> variance reduction in residuals</p>
+                  <p class="eq">
+                    \[
+                    R_{\text{within}}^2 =
+                    1 - \frac{\operatorname{tr}(\mathbf{R})}{\operatorname{tr}(\mathbf{R}^{(0)})}
+                    \]
+                  </p>
+              
+                  <p><strong>Between-level \(R^2\):</strong> variance reduction in random effects</p>
+                  <p class="eq">
+                    \[
+                    R_{u0}^2 = 1 - \frac{\tau_{00}}{\tau_{00}^{(0)}}, \quad
+                    R_{u1}^2 = 1 - \frac{\tau_{11}}{\tau_{11}^{(0)}}
+                    \]
+                  </p>
+              
+                  <p><strong>Total \(R^2\):</strong> reduction in overall covariance volume</p>
+                  <p class="eq">
+                    \[
+                    R_{\text{total}}^2 =
+                    1 - \frac{\operatorname{tr}(\mathbf{V})}
+                    {\operatorname{tr}(\mathbf{V}^{(0)})}
+                    = 1 -
+                    \frac{\operatorname{tr}(\mathbf{Z}\mathbf{G}\mathbf{Z}^\top) + \operatorname{tr}(\mathbf{R})}
+                    {\operatorname{tr}(\mathbf{Z}^{(0)}\mathbf{G}^{(0)}\mathbf{Z}^{(0)\top}) + \operatorname{tr}(\mathbf{R}^{(0)})}
+                    \]
+                  </p>
+                  <hr>
+                    <h3>Challenges in Estimating \(\operatorname{Var}(\mathbf{X}\boldsymbol{\beta})\) and the Role of Fixed–Random Correlation</h3>
+
+                    <p>
+                    In ordinary least squares (OLS), the variance of fitted values,
+                    \(\operatorname{Var}(\mathbf{X}\boldsymbol{\beta})\),
+                    is straightforward because \(\boldsymbol{\beta}\) is estimated independently of the residual structure. 
+                    The variance is given by:
+                    </p>
+
+                    <p>
+                    \(
+                    \operatorname{Var}(\mathbf{X}\boldsymbol{\beta}) 
+                    = 
+                    \mathbf{X}\,\operatorname{Var}(\hat{\boldsymbol{\beta}})\,\mathbf{X}^\top,
+                    \)
+                    </p>
+
+                    <p>
+                    In multilevel models (MLMs), however, the precision of \(\hat{\boldsymbol{\beta}}\) depends on the full marginal covariance:
+                    \(
+                    \mathbf{V} = \mathbf{Z}\mathbf{G}\mathbf{Z}^\top + \mathbf{R}.\)
+
+                    <p>
+                    In <em>random slope models</em>, the random-effects design matrix \(\mathbf{Z}\)
+                    shares columns with the fixed-effects design matrix \(\mathbf{X}\) and induces a <strong>statistical correlation between fixed and random effects</strong>.
+                    </p>
+
+                    <p>
+                    When the random intercept and slope are correlated (\(\tau_{01} \neq 0\)), 
+                    the random component \(\mathbf{Z}\mathbf{G}\mathbf{Z}^\top\) partially shares informations with the fixed component \(\mathbf{X}\boldsymbol{\beta}\). 
+                    This means that part of the variability attributed to “fixed effects” 
+                    is also captured by the random structure.
+                    </p>
+
+                    <p>
+                    Consequently, \(\operatorname{Var}(\mathbf{X}\boldsymbol{\beta})\) can no longer be uniquely interpreted as the variance “explained by fixed effects,”  and undermines a clean decomposition of total variance:
+                    </p>
+
+                    <p>
+                    \(
+                    \operatorname{Var}(\mathbf{y}) 
+                    = 
+                    \underbrace{\operatorname{Var}(\mathbf{X}\boldsymbol{\beta})}_{\text{fixed (mean) structure}} 
+                    + 
+                    \underbrace{\operatorname{Var}(\mathbf{Z}\mathbf{b})}_{\text{random deviations}} 
+                    + 
+                    \underbrace{\operatorname{Var}(\boldsymbol{\varepsilon})}_{\text{residual noise}},
+                    \)
+                    </p>
+
+                    <p>
+                    because the cross-covariance between \(\mathbf{X}\boldsymbol{\beta}\) and \(\mathbf{Z}\mathbf{b}\)
+                    is nonzero when slopes vary across groups or when \(\tau_{01} \neq 0\):
+                    \(
+                    \operatorname{Cov}(\mathbf{X}\boldsymbol{\beta}, \mathbf{Z}\mathbf{b}) \neq \mathbf{0}.
+                    \)
+                    </p>
+                    <hr>
+                    <h3>Possible Solutions for Variance Decomposition</h3>
+
+                    <p>
+                    Exact separation of fixed and random variance is difficult when \(\mathbf{X}\) and \(\mathbf{Z}\) overlap or when intercepts and slopes are correlated (\(\tau_{01} \neq 0\)). Practical strategies include:
+                    </p>
+
+                    <ul>
+                    <li><strong>Centering predictors:</strong> Group-mean centering reduces correlation between fixed and random slopes.</li>
+                    <li><strong>Projection:</strong> Residualize \(\mathbf{Z}\) on \(\mathbf{X}\) so \( \mathbf{X}^\top \mathbf{V}^{-1}\mathbf{Z}=0 \), creating orthogonal design spaces.</li>
+                    <li><strong>Trace-based \(R^2\):</strong> Use \(\operatorname{tr}(\mathbf{G})\) and \(\operatorname{tr}(\mathbf{R})\) (Rights & Sterba, 2019) to summarize explained variance by level.</li>
+                    <li><strong>Marginal/Conditional \(R^2\):</strong> Approximate total explained variance with \(R_m^2\) and \(R_c^2\) (Nakagawa & Schielzeth, 2013).</li>
+                    </ul>
+
+                    <p>
+                    These methods bypass the need to compute \(\operatorname{Var}(\mathbf{X}\boldsymbol{\beta})\) directly while preserving interpretability of variance explained at each level.
+                    </p>
+              
+                </div>
+              </section>
+              
+            <!-- ESTIMATION SECTION -->
+            <section id="estimation" class="section">
+                <div class="intro">
+                    <h2>MLM Estimation</h2>
+                    <p class = "eq">
+                        \(
+                        p(\mathbf{y}) 
+                        = \int p(\mathbf{y}, \mathbf{b})\,d\mathbf{b} 
+                        = \int p(\mathbf{y}\mid \mathbf{b})\,p(\mathbf{b})\,d\mathbf{b},
+                        \)
+                        </p>
+                        
+                        <p>
+                        This follows the logic:
+                        \(
+                        \text{chain rule} \;\Rightarrow\; p(\mathbf{y},\mathbf{b}) = p(\mathbf{y}\mid\mathbf{b})p(\mathbf{b})
+                        \;\Rightarrow\;
+                        \text{integrate over }\mathbf{b}\;\Rightarrow\;
+                        p(\mathbf{y}) = \int p(\mathbf{y}\mid\mathbf{b})p(\mathbf{b})\,d\mathbf{b},
+                        \)
+                        yielding the marginal likelihood used in mixed-model estimation.
+                        </p>
+                      <p>The joint density of data and random effects:</p>
+                  
+                      <p class="eq">
+                        \[
+                        p(\mathbf{y},\mathbf{b}\mid\boldsymbol{\beta},\mathbf{G},\mathbf{R}) =
+                        p(\mathbf{y}\mid\mathbf{b},\boldsymbol{\beta},\mathbf{R})\,p(\mathbf{b}\mid\mathbf{G})
+                        \]
+                      </p>
+                  
+                      <p>We estimate parameters by maximizing the marginal log-likelihood:</p>
+                  
+                      <p class="eq">
+                        \[
+                        \ell(\boldsymbol{\beta},\mathbf{G},\mathbf{R})
+                        = -\tfrac{1}{2}\!\left[
+                        n\log(2\pi) + \log|\mathbf{V}| +
+                        (\mathbf{y}-\mathbf{X}\boldsymbol{\beta})^\top \mathbf{V}^{-1}
+                        (\mathbf{y}-\mathbf{X}\boldsymbol{\beta})
+                        \right]
+                        \]
+                      </p>
+                  
+                      <div class="defblock">
+                        <p>β → fixed effects (population-level)</p>
+                        <p>G → random-effect covariance (group-level)</p>
+                        <p>R → residual covariance (within-group)</p>
+                      </div>
+
+                      <h3>Estimating parameters</h3>
+                      <div class="defblock">
+                        <p><strong>Step (a):</strong> Given variance parameters \((\mathbf{G}, \mathbf{R})\), estimate \(\boldsymbol{\beta}\).</p>
+                        <p>We obtain fixed effects using the generalized least squares (GLS) solution.</p>
+                      
+                        <p><strong>Step (b):</strong> Estimate variance parameters \((\mathbf{G}, \mathbf{R})\).</p>
+                        <p><em>Goal:</em> Maximize the marginal likelihood (ML) or restricted likelihood (REML).</p>
+                      </div>
+
+                      <p>
+                        For known \(\mathbf{V}\), maximizing \(\ell\) with respect to \(\boldsymbol{\beta}\) gives the Generalized Least Squares (GLS) estimator:
+                        </p>
+                        
+                        <p>
+                        \(
+                        \hat{\boldsymbol{\beta}} 
+                        = 
+                        (\mathbf{X}^\top \mathbf{V}^{-1} \mathbf{X})^{-1} 
+                        \mathbf{X}^\top \mathbf{V}^{-1} \mathbf{y}.
+                        \)
+                        </p>
+                        
+                        <p>
+                        After substituting \(\hat{\boldsymbol{\beta}}\) into the likelihood (profiling out \(\boldsymbol{\beta}\)), 
+                        the profile log-likelihood for variance parameters becomes:
+                        </p>
+                        
+                        <p>
+                        \(
+                        \ell_p(\mathbf{G}, \mathbf{R}) 
+                        = 
+                        -\tfrac{1}{2}
+                        \left[
+                          \log|\mathbf{V}| 
+                          + (\mathbf{y} - \mathbf{X}\hat{\boldsymbol{\beta}})^\top \mathbf{V}^{-1}(\mathbf{y} - \mathbf{X}\hat{\boldsymbol{\beta}}) 
+                          + n\log(2\pi)
+                        \right].
+                        \)
+                        </p>
+                        
+                        <div class="defblock">
+                          <p><strong>GLS:</strong> Weighted regression using model-implied covariance \(\mathbf{V}\).</p>
+                          <p><strong>Profile log-likelihood:</strong> Log-likelihood after substituting \(\hat{\boldsymbol{\beta}}\), optimized over \(\mathbf{G}, \mathbf{R}\).</p>
+                          <p><strong>Numerical optimization:</strong> Iteratively update \(\mathbf{V} = \mathbf{Z}\mathbf{G}\mathbf{Z}^\top + \mathbf{R}\) and re-estimate \(\hat{\boldsymbol{\beta}}\).</p>
+                        </div>
+
+                        <p>
+                            Mixed-model estimation proceeds iteratively as follows:
+                            </p>
+                            
+                            <p>1️ <strong>Initialize:</strong> Start with initial guesses for variance parameters (e.g., from the previous iteration).</p>
+                            
+                            <p>2️ <strong>Update covariance:</strong> Compute the marginal covariance  
+                            \(\mathbf{V} = \mathbf{Z}\mathbf{G}\mathbf{Z}^\top + \mathbf{R}\).</p>
+                            
+                            <p>3️ <strong>Estimate fixed effects:</strong> Compute  
+                            \(\hat{\boldsymbol{\beta}} = (\mathbf{X}^\top \mathbf{V}^{-1}\mathbf{X})^{-1}\mathbf{X}^\top \mathbf{V}^{-1}\mathbf{y}\)  
+                            via Generalized Least Squares (GLS).</p>
+                            
+                            <p>4️ <strong>Profile likelihood:</strong> Substitute \(\hat{\boldsymbol{\beta}}\) into the log-likelihood  
+                            and evaluate \(\ell_p(\mathbf{G}, \mathbf{R})\).</p>
+                            
+                            <p>5️ <strong>Optimize variance components:</strong> Maximize \(\ell_p\) numerically over the parameters in  
+                            \(\mathbf{G}\) and \(\mathbf{R}\).</p>
+                            
+                            <p>6️<strong>Repeat:</strong> Alternate between the closed-form update for \(\boldsymbol{\beta}\)  
+                            and numerical optimization for \((\mathbf{G}, \mathbf{R})\) until convergence.</p>
+                            
+                            <div class="defblock">
+                              <p><strong>Inner step:</strong> Closed-form GLS update for \(\boldsymbol{\beta}\).</p>
+                              <p><strong>Outer step:</strong> Iterative ML/REML optimization for variance parameters \((\mathbf{G}, \mathbf{R})\).</p>
+                            </div>
+
+                            <h3>ML (Maximum Likelihood)</h3>
+
+                            <p>
+                            Uses the marginal likelihood of the data \(p(\mathbf{y}\mid\boldsymbol{\beta},\mathbf{G},\mathbf{R})\),
+                            estimating \(\boldsymbol{\beta}, \mathbf{G}, \mathbf{R}\) simultaneously.
+                            </p>
+
+                            <p>
+                            Variance estimates \((\mathbf{G}, \mathbf{R})\) are typically biased downward because ML ignores
+                            the uncertainty from estimating \(\boldsymbol{\beta}\).
+                            However, ML is appropriate for likelihood-ratio tests between models with identical fixed effects.
+                            </p>
+
+                            <div class="defblock">
+                            <p><strong>ML:</strong> Jointly estimates fixed and random effects; may underestimate variance components.</p>
+                            </div>
+
+                            <h3>REML (Restricted / Residual ML)</h3>
+
+                            <p>
+                            REML integrates out \(\boldsymbol{\beta}\) before maximizing, yielding a likelihood for variance parameters only:
+                            </p>
+
+                            <p>
+                            \(
+                            \ell_{\text{REML}}(\mathbf{G}, \mathbf{R})
+                            = 
+                            -\tfrac{1}{2}
+                            \left[
+                            (n - p)\log(2\pi)
+                            + \log|\mathbf{V}|
+                            + \log|\mathbf{X}^\top \mathbf{V}^{-1}\mathbf{X}|
+                            + \mathbf{y}^\top \mathbf{P}_{\mathbf{X},\mathbf{V}} \mathbf{y}
+                            \right],
+                            \)
+                            </p>
+
+                            <p>
+                            where  
+                            \(
+                            \mathbf{P}_{\mathbf{X},\mathbf{V}}
+                            = 
+                            \mathbf{V}^{-1}
+                            - 
+                            \mathbf{V}^{-1}\mathbf{X}(\mathbf{X}^\top \mathbf{V}^{-1}\mathbf{X})^{-1}\mathbf{X}^\top \mathbf{V}^{-1}.
+                            \)
+                            </p>
+
+                            <p>
+                            REML adjusts for the loss of \(p\) degrees of freedom from estimating \(\boldsymbol{\beta}\),
+                            producing unbiased variance estimates under normality.
+                            It should not be used to compare models with different fixed-effect structures,
+                            since integrating over \(\boldsymbol{\beta}\) changes the likelihood’s reference space.
+                            </p>
+
+                            <div class="defblock">
+                            <p><strong>REML:</strong> Maximizes likelihood after integrating out \(\boldsymbol{\beta}\); unbiased for variance estimation but unsuitable for comparing fixed-effect models.</p>
+                            </div>
+                            <h3>BLUPS</h3>
+                            <p>
+                                Once the variance components \(\hat{\mathbf{G}}\) and \(\hat{\mathbf{R}}\) are estimated, the posterior mean of the random effects—known as the <strong>Best Linear Unbiased Predictors (BLUPs)</strong> is:
+                                </p>
+                                
+                                <p>
+                                \(
+                                \hat{\mathbf{b}} 
+                                = 
+                                \underbrace{\hat{\mathbf{G}}\mathbf{Z}^\top}_{\text{random-effect}}
+                                \underbrace{\hat{\mathbf{V}}^{-1}}_{\text{precision}}
+                                \underbrace{(\mathbf{y} - \mathbf{X}\hat{\boldsymbol{\beta}})}_{\text{residual}}.
+                                \)
+                                </p>
+                                
+                                <p>
+                                The estimate \(\hat{\mathbf{b}}\) balances information from the random-effect variance \(\hat{\mathbf{G}}\) and the residual variance \(\hat{\mathbf{R}}\):
+                                when \(\hat{\mathbf{G}}\) is large relative to \(\hat{\mathbf{R}}\), group-level effects are estimated closer to the observed data;
+                                when small, they shrink more strongly toward zero (partial pooling).
+                                </p>
+
+                                <h3>Shrinkage</h3>
+
+                                <p>
+                                    In the simple case of one random effect per cluster (random intercept model), the <strong>posterior mean</strong> or BLUP for cluster \(j\) is:
+                                    </p>
+                                    
+                                    <p>
+                                    \(
+                                    \hat{b}_j 
+                                    = 
+                                    \underbrace{\frac{\tau^2}{\tau^2 + \sigma^2 / n_j}}_{\text{shrinkage weight } w_j}
+                                    (\bar{y}_j - \hat{\beta}_0),
+                                    \)
+                                    </p>
+                                    
+                                    <p>
+                                    where \(\tau^2\) is the between-cluster variance, \(\sigma^2\) is the within-cluster (residual) variance, 
+                                    and \(n_j\) is the cluster size.
+                                    The term under the brace, \(w_j\), determines how much each cluster’s mean 
+                                    \((\bar{y}_j)\) pulls toward the overall mean \(\hat{\beta}_0\).
+                                    </p>
+                                    
+                                    <p>
+                                    Equivalently, this shrinkage weight can be expressed as:
+                                    </p>
+                                    
+                                    <p>
+                                    \(
+                                    w_j = 
+                                    \frac{1}{1 + (\text{prior curvature} / \text{data curvature})},
+                                    \)
+                                    </p>
+                                    
+                                    <p>
+                                    showing that stronger prior information (large \(\tau^2\)) or less within-group noise (small \(\sigma^2\)) 
+                                    increases the influence of the group-specific deviation.
+                                    </p>
+                                        <h2>ML vs REML Variance Estimates</h2>
+                                      
+                                        <div class="controls">
+                                          <label>Groups (J)
+                                            <input id="viz_J" type="number" value="8" min="2" step="1">
+                                          </label>
+                                          <label>Obs / Group (n)
+                                            <input id="viz_n" type="number" value="10" min="2" step="1">
+                                          </label>
+                                          <label>τ₀₀ (intercept var)
+                                            <input id="viz_tau00" type="number" value="1.0" min="0" step="0.1">
+                                          </label>
+                                          <label>τ₁₁ (slope var)
+                                            <input id="viz_tau11" type="number" value="0.5" min="0" step="0.1">
+                                          </label>
+                                          <label>ρ (correlation)
+                                            <input id="viz_rho" type="number" value="0.2" min="-0.99" max="0.99" step="0.1">
+                                          </label>
+                                          <label>σ² (resid var)
+                                            <input id="viz_sigma2" type="number" value="1.0" min="0.01" step="0.1">
+                                          </label>
+                                          <label>β₀
+                                            <input id="viz_b0" type="number" value="2.0" step="0.1">
+                                          </label>
+                                          <label>β₁
+                                            <input id="viz_b1" type="number" value="0.5" step="0.1">
+                                          </label>
+                                          <label style="align-items:center;gap:.5rem;flex-direction:row;">
+                                            <input id="viz_rslope" type="checkbox" checked> random slope
+                                          </label>
+                                          <button id="viz_run" class="btn">Compute</button>
+                                        </div>
+                                      
+                                        <div id="viz_error" style="color:#b91c1c;margin-top:.5rem;"></div>
+                                        <svg id="viz_bars" width="760" height="340"></svg>
+                                      
+                                        <h3>Fixed Effects (Estimates ± SE)</h3>
+                                        <table id="viz_table" style="border-collapse:collapse;width:760px;">
+                                          <thead>
+                                            <tr>
+                                              <th style="padding:6px;text-align:left;border-bottom:1px solid #e2e8f0;">Term</th>
+                                              <th style="padding:6px;text-align:left;border-bottom:1px solid #e2e8f0;">True</th>
+                                              <th style="padding:6px;text-align:left;border-bottom:1px solid #e2e8f0;">ML (±SE)</th>
+                                              <th style="padding:6px;text-align:left;border-bottom:1px solid #e2e8f0;">REML (±SE)</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody id="viz_tbody"></tbody>
+                                        </table>
+                                      
+                                    
+                        
+                      
+                </div>
+            </section>
+
+            <!-- Small Sample Inferences Section -->
+            <section id="small-sample" class="section">
+                <div class="intro">
+                    <h2>Why Small-Sample Inference Fails</h2>
+                    <table>
+                        <thead>
+                          <tr>
+                            <th>Problem</th>
+                            <th>Geometric Interpretation</th>
+                            <th>Practical Consequence</th>
+                            <th>Typical Fix</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>Few clusters</td>
+                            <td>Flat curvature of likelihood</td>
+                            <td>Overconfident SEs</td>
+                            <td>Kenward–Roger (KR) or bootstrap</td>
+                          </tr>
+                          <tr>
+                            <td>Boundary variances</td>
+                            <td>Hessian near-singular</td>
+                            <td>Variance = 0 estimates</td>
+                            <td>REML + weak priors</td>
+                          </tr>
+                          <tr>
+                            <td>Unbalanced clusters</td>
+                            <td>Unequal curvature directions</td>
+                            <td>Inflated Type-I error</td>
+                            <td>Wild bootstrap</td>
+                          </tr>
+                          <tr>
+                            <td>High random-slope variability</td>
+                            <td>Correlated parameters flatten surface</td>
+                            <td>Misleading df</td>
+                            <td>Kenward–Roger or Bayesian methods</td>
+                          </tr>
+                          <tr>
+                            <td>Nonlinear GLMM</td>
+                            <td>Link-function curvature distorts asymptotics</td>
+                            <td>Incorrect SEs</td>
+                            <td>Bootstrap or penalized likelihood</td>
+                          </tr>
+                        </tbody>
+                      </table>                      
+                    <h2>General recommendations</h2>
+                    <table>
+                        <thead>
+                          <tr>
+                            <th>Method</th>
+                            <th>What It Does</th>
+                            <th>When It Helps</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>REML instead of ML</td>
+                            <td>Removes first-order bias in variance components</td>
+                            <td>Always preferred when testing fixed effects</td>
+                          </tr>
+                          <tr>
+                            <td>Satterthwaite (1946)</td>
+                            <td>Approximates df by matching first two moments of the Wald statistic to a t-distribution</td>
+                            <td>Old but effective</td>
+                          </tr>
+                          <tr>
+                            <td>Kenward–Roger (1997)</td>
+                            <td>Adjusts both covariance matrix of fixed effects and df using a Taylor expansion around REML estimates.</td>
+                            <td>Best frequentist small-sample correction</td>
+                          </tr>
+                          <tr>
+                            <td>Parametric residual bootstrap</td>
+                            <td>Simulate data under fitted model to derive empirical distribution of test statistic</td>
+                            <td>Accurate but computationally expensive</td>
+                          </tr>
+                          <tr>
+                            <td>Wild cluster bootstrap</td>
+                            <td>Resamples at the cluster level (residual or wild weights)</td>
+                            <td>Effective in unbalanced designs, with heteroskedacity and for GLMMs (most recommended)</td>
+                          </tr>
+
+                          <tr>
+                            <td>Bayesian priors</td>
+                            <td>Weakly informative priors on variances</td>
+                            <td>Stabilizes estimates and prevents boundary issues. The posterior automatically accounts for small J and adds curvature to llk.</td>
+                          </tr>
+
+                        </tbody>
+                      </table>
+                      <div class="strategy-section">
+                        <h3>🧭 (A) Adjusted Degrees of Freedom Methods</h3>
+                        <p><b>1. Satterthwaite approximation:</b> Matches the first two moments of the estimated variance to a scaled χ² distribution for small-sample correction.</p>
+                        <p>Formula: \( t = \frac{\hat{\beta}}{SE(\hat{\beta})}, \quad \nu \approx \frac{2(Var(\hat{\beta}))^2}{Var[Var(\hat{\beta})]} \)</p>
+                        <p>Implemented in <code>lmerTest</code> (R). Reference: Satterthwaite (1946), Luke (2017).</p>
+                        <p><b>2. Kenward–Roger correction:</b> Adjusts both covariance and degrees of freedom via Taylor expansion of the likelihood around REML estimates. 
+                        <br>→ More accurate F- and t-tests when clusters are few (<i>small J</i>).</p>
+                      </div>
+                      
+                      <div class="strategy-section">
+                        <h3>⚙️ (B) Adjusted Likelihood and Penalization Methods</h3>
+                        <ul>
+                          <li><b>Bartlett-corrected LRT:</b> Rescales the LRT statistic 
+                            \( \Lambda = 2(\ell_{\text{full}} - \ell_{\text{reduced}}) \)
+                            as 
+                            \( \Lambda^{*} = \frac{\Lambda}{1 + c/J} \)
+                            for better χ² approximation under small \( J \).</li>
+                          <li><b>Penalized likelihood:</b> Adds regularization to stabilize \( G \) near boundaries: 
+                            \( \ell^{*}(G,R) = \ell(G,R) - \lambda\,pen(G) \), 
+                            with penalties such as 
+                            \( \|G^{-1}\|_F^2 \) or log-determinant terms. Implemented in <code>blme</code> and <code>lme4</code>.</li>
+                          <li><b>Firth-type bias correction:</b> Adds the Jeffreys prior penalty: 
+                            \( \ell^{*}(\theta) = \ell(\theta) + \frac{1}{2}\log|I(\theta)| \), 
+                            reducing boundary bias for small variance components.</li>
+                        </ul>
+                      </div>
+                      
+                      <div class="strategy-section">
+                        <h3>🧠 (C) Bayesian & Resampling Approaches</h3>
+                        <ul>
+                          <li><b>Bayesian estimation:</b> Place priors on variance components (e.g. 
+                            \( \tau^2 \sim \text{Half-Cauchy}(0,2) \), 
+                            \( \sigma^2 \sim \text{Half-Normal}(0,1) \)). 
+                            Implemented in <code>brms</code>, <code>rstanarm</code>, and <code>Stan</code>.</li>
+                          <li><b>Empirical Bayes:</b> Treat REML estimates as empirical priors for posterior sampling — balances bias and computational cost.</li>
+                          <li><b>Parametric bootstrap:</b> Simulate new datasets from the fitted model to approximate test statistic distributions — preserves curvature of \( V \).</li>
+                          <li><b>Wild bootstrap:</b> Resample residuals with sign flips or multipliers to maintain cluster structure — robust for non-normal or unbalanced data.</li>
+                          <li><b>Hierarchical sandwich estimators (CR2):</b> Adjusts \( (X'V^{-1}X)^{-1} \) directly to correct curvature bias. Effective when clusters are few.</li>
+                        </ul>
+                      </div>
+                      
+                </div>
+                
+            </section>
+              
+                 
+
+
+          <!-- LLK SECTION -->
+          <section id="llk" class="section">
+                <h1>Log-Likelihood Surface</h1>
+                <p>Simulate marginal likelihood surface for random-intercept MLM.</p>
+          
+                <div class="controls">
+                  <label>Clusters (J)
+                    <input id="J" type="number" min="2" value="8">
+                  </label>
+                  <label>Obs per Cluster (n_per)
+                    <input id="n_per" type="number" min="2" value="6">
+                  </label>
+                  <label>Max τ²
+                    <input id="tauMax" type="number" step="0.05" value="0.15">
+                  </label>
+                  <label>Max σ²
+                    <input id="sigmaMax" type="number" step="0.05" value="1.5">
+                  </label>
+                  <button id="simulate">Simulate & Compute</button>
+                </div>
+          
+                <div id="progressText"></div>
+                <div id="progressBar"></div>
+          
+                <div id="plot3D"></div>
+                <div id="plot2D"></div>
+                <div id="tauProfile"></div>
+                <div id="sigmaProfile"></div>
+          </section>
+    
+          <!-- MODEL COMPARISON -->
+            <!-- MODEL COMPARISON SECTION -->
+            <section id="compare" class="section">
+                <h1>Matrix Anatomy & Variance Partitioning</h1>
+                <p class="section-desc">
+                Explore how the marginal covariance matrix V = ZGZ′ + R is formed,
+                and how random and residual components contribute to R².
+                </p>
+            
+                <div class="controls">
+                    <label>Clusters (J)
+                      <input type="number" id="J_mat" value="4" min="2">
+                    </label>
+                    <label>Obs/Cluster
+                      <input type="number" id="n_mat" value="5" min="2">
+                    </label>
+                    <label>Structure
+                      <select id="structure_mat">
+                        <option value="intercept">Random Intercept</option>
+                        <option value="slope">Random Slope</option>
+                      </select>
+                    </label>
+                    <label>τ²<sub>Intercept</sub>
+                      <input type="number" id="tau_mat" value="0.05" step="0.01">
+                    </label>
+                    <label>τ²<sub>Slope</sub>
+                      <input type="number" id="tau_slope_mat" value="0.02" step="0.01">
+                    </label>
+                    <label>ρ (corr)
+                      <input type="number" id="rho_mat" value="0.3" step="0.1" min="-1" max="1">
+                    </label>
+                    <label>σ²
+                      <input type="number" id="sig_mat" value="1.0" step="0.1">
+                    </label>
+                    <button id="computeMatrix">Compute Matrices</button>
+                  </div>                  
+            
+                <div class="matrix-grid">
+                <div id="plotG" class="matrix-plot"></div>
+                <div id="plotR" class="matrix-plot"></div>
+                <div id="plotV" class="matrix-plot"></div>
+                <div id="plotVinv" class="matrix-plot"></div>
+                </div>
+            
+                <div id="r2plot"></div>
+                <div id="matrixInfo"></div>
+            </section>
+            
+    
+          <!-- DIAGNOSTICS -->
+          <section id="diagnostics" class="section">
+            <!-- ===== Curvature & Boundary Controls + Canvas (MLMVIZ section) ===== -->
+            <div id="mlmviz-shell">
+                <div id="mlmviz-controls">
+                  <h2 id="mlmviz-controls-title">Model Surface Controls</h2>
+            
+                  <div id="mlmviz-slider-wrap">
+                    <label id="mlmviz-slider-label" for="mlmviz-curvature-slider">
+                      Curvature (<code>a</code>):
+                      <span id="mlmviz-curvature-value">1.00</span>
+                    </label>
+                    <input id="mlmviz-curvature-slider" type="range" min="0.10" max="2.00" step="0.01" value="1.00" />
+                  </div>
+            
+                  <div id="mlmviz-angle-wrap">
+                    <label id="mlmviz-angle-label" for="mlmviz-angle-slider">
+                      Boundary Angle (<code>°</code>):
+                      <span id="mlmviz-angle-value">30</span>
+                    </label>
+                    <input id="mlmviz-angle-slider" type="range" min="5" max="60" step="1" value="30" />
+                  </div>
+            
+                  <label id="mlmviz-boundary-label" for="mlmviz-boundary-toggle">
+                    <input id="mlmviz-boundary-toggle" type="checkbox" />
+                    Boundary Mode (V + Line)
+                  </label>
+            
+                  <button id="mlmviz-reset" type="button">Reset / Drop</button>
+                </div>
+            
+                <svg id="mlmviz-canvas" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet"></svg>
+              </div>
+  
+          </section>
+        </main>
+      </div>
+
+  <script src="{{ url_for('static', filename='mlm_surface.js') }}"></script>
+  <script src="{{ url_for('static', filename='d3_code.js') }}"></script>
+  <script src="{{ url_for('static', filename='randomslope_full.js') }}"></script>
+
+
+
+</body>
+</html>
