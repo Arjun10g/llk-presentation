@@ -2,6 +2,6 @@ services:
   - type: web
     name: mlm-flask-app
     env: python
-    buildCommand: "pip install -r requirements.txt"
+    buildCommand: "pip install --no-cache-dir -r requirements.txt"
     startCommand: "gunicorn app:app"
     plan: free
